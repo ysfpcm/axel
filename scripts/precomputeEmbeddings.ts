@@ -1,6 +1,6 @@
 // scripts/precomputeEmbeddings.ts
 
-import { OpenAIApi, Configuration } from 'openai-edge';
+import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
 
@@ -16,10 +16,9 @@ interface KnowledgeItem {
 }
 
 // Initialize OpenAI API
-const config = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(config);
 
 /**
  * Generates embedding for a given text using OpenAI's Embedding API.
@@ -27,17 +26,12 @@ const openai = new OpenAIApi(config);
  * @returns A promise that resolves to the embedding vector.
  */
 async function getEmbedding(text: string): Promise<number[]> {
-  const response = await openai.createEmbedding({
+  const response = await openai.embeddings.create({
     model: 'text-embedding-ada-002',
     input: text,
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to generate embedding');
-  }
-
-  const data = await response.json();
-  return data.data[0].embedding;
+  return response.data[0].embedding;
 }
 
 async function precomputeEmbeddings() {
