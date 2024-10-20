@@ -1,15 +1,14 @@
 // app/api/chat/route.ts
 
-import { Configuration, OpenAIApi } from 'openai-edge';
+import OpenAI from 'openai';
 import { OpenAIStream, StreamingTextResponse } from 'ai';
 import { loadKnowledgeBase } from '@/utils/knowledgeBase';
 import { getEmbedding } from '@/utils/embedding';
 import { cosineSimilarity } from '@/utils/similarity';
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
 export const runtime = 'edge';
 
@@ -81,38 +80,32 @@ export async function POST(req: Request): Promise<Response> {
 
     const topRelevantInfos = topIndices.map((idx) => validKnowledgeBase[idx].content);
     const combinedInfo = topRelevantInfos.join(' ');
-    console.log(`Top ${TOP_N} relevant infos combined.`);
 
-    // Construct the prompt with enhanced instructions
-    const prompt = combinedInfo
-      ? `Based on the following information: "${combinedInfo}", please provide a response to: "${lastMessage.content}". If your response includes steps, format them as a numbered list using Markdown syntax.`
-      : `${lastMessage.content}. If your response includes steps, format them as a numbered list using Markdown syntax.`;
+    // Construct a more informative prompt
+    const prompt = `Based on the following relevant information:
+${combinedInfo}
+
+Please provide a concise and helpful response to the user's question: "${lastMessage.content}"
+If your response includes steps, format them as a numbered list using Markdown syntax.`;
 
     console.log('Constructed prompt:', prompt);
 
     // Create the chat completion
-    const response = await openai.createChatCompletion({
-      model: 'gpt-4', // Ensure this model is available and correctly spelled
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4',
       stream: true,
       messages: [
         {
           role: 'system',
           content:
-            'You are a friendly and professional AI assistant. All of your responses must be brief and easy to understand for individuals with no technical knowledge. When providing step-by-step instructions, format them as a numbered list using Markdown syntax.',
+            'You are Axel, a friendly and professional AI assistant for Exatouch. Provide brief, easy-to-understand responses for individuals with no technical knowledge. Use the given context to inform your answers, and when providing step-by-step instructions, format them as a numbered list using Markdown syntax.',
         },
         ...messages.slice(0, -1),
         { role: 'user', content: prompt },
       ],
     });
 
-    console.log('OpenAI API response status:', response.status);
-
-    // Check if the response is OK
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
-      return new Response(JSON.stringify({ error: 'OpenAI API error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-    }
+    console.log('OpenAI API response received');
 
     // Stream the response
     const stream = OpenAIStream(response);

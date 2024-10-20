@@ -1,14 +1,11 @@
-// app/utils/similarity.ts
+// utils/similarity.ts
 
-/**
- * Calculates the cosine similarity between two vectors.
- * @param vecA First vector.
- * @param vecB Second vector.
- * @returns Cosine similarity score.
- */
-export function cosineSimilarity(vecA: number[], vecB: number[]): number {
-    const dotProduct = vecA.reduce((sum, a, idx) => sum + a * vecB[idx], 0);
-    const magnitudeA = Math.sqrt(vecA.reduce((sum, a) => sum + a * a, 0));
-    const magnitudeB = Math.sqrt(vecB.reduce((sum, b) => sum + b * b, 0));
+export const cosineSimilarity = (a: number[], b: number[]): number => {
+    const dotProduct = a.reduce((sum, val, idx) => sum + val * b[idx], 0);
+    const magnitudeA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
+    const magnitudeB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
+  
+    if (magnitudeA === 0 || magnitudeB === 0) return 0;
+  
     return dotProduct / (magnitudeA * magnitudeB);
-}
+};

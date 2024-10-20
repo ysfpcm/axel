@@ -1,13 +1,20 @@
-// app/utils/knowledgeBase.ts
-import knowledgeBase from '@/data/knowledgeBase.json';
+// utils/knowledgeBase.ts
 
-interface KnowledgeItem {
+interface KnowledgeBaseEntry {
   title: string;
   content: string;
-  url: string;
   embedding: number[];
 }
 
-export function loadKnowledgeBase(): KnowledgeItem[] {
-  return knowledgeBase as unknown as KnowledgeItem[];
-}
+export const loadKnowledgeBase = (): KnowledgeBaseEntry[] => {
+  // Example: Load from a JSON file or database
+  // Here, we'll return a static array for demonstration
+  return [
+    {
+      title: 'Example Title',
+      content: 'Example content.',
+      embedding: [/* embedding numbers */],
+    },
+    // Add more entries as needed
+  ];
+};
