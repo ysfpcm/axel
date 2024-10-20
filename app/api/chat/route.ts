@@ -92,7 +92,7 @@ If your response includes steps, format them as a numbered list using Markdown s
 
     // Create the chat completion
     const response = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o-mini',
       stream: true,
       messages: [
         {
