@@ -1,4 +1,4 @@
-// pages/api/chat.ts
+// app/api/chat/route.ts
 
 import { Configuration, OpenAIApi } from 'openai-edge';
 import { OpenAIStream, StreamingTextResponse } from 'ai';
@@ -6,10 +6,10 @@ import { loadKnowledgeBase } from '@/utils/knowledgeBase';
 import { getEmbedding } from '@/utils/embedding';
 import { cosineSimilarity } from '@/utils/similarity';
 
-const config = new Configuration({
+const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(config);
+const openai = new OpenAIApi(configuration);
 
 export const runtime = 'edge';
 
@@ -23,12 +23,12 @@ export async function POST(req: Request): Promise<Response> {
     // Validate the messages array
     if (!messages || !Array.isArray(messages)) {
       console.error('Invalid messages format:', messages);
-      return new Response('Invalid messages format', { status: 400 });
+      return new Response(JSON.stringify({ error: 'Invalid messages format' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
     if (messages.length === 0) {
       console.error('No messages received.');
-      return new Response('No messages provided', { status: 400 });
+      return new Response(JSON.stringify({ error: 'No messages provided' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Validate each message
@@ -36,12 +36,13 @@ export async function POST(req: Request): Promise<Response> {
       const msg = messages[i];
       if (!msg.role || !msg.content) {
         console.error(`Message at index ${i} is invalid:`, msg);
-        return new Response(`Invalid message format at index ${i}`, { status: 400 });
+        return new Response(JSON.stringify({ error: `Invalid message format at index ${i}` }), { status: 400, headers: { 'Content-Type': 'application/json' } });
       }
     }
 
     const lastMessage = messages[messages.length - 1];
     console.log('Last message:', lastMessage);
+
     // Load the knowledge base with embeddings
     const knowledgeBase = loadKnowledgeBase();
     console.log('Loaded knowledgeBase with embeddings:', knowledgeBase.length, 'entries');
@@ -58,7 +59,7 @@ export async function POST(req: Request): Promise<Response> {
 
     if (validKnowledgeBase.length === 0) {
       console.error('Knowledge base is empty or improperly formatted.');
-      return new Response('Knowledge base error', { status: 500 });
+      return new Response(JSON.stringify({ error: 'Knowledge base error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Generate embedding for user message
@@ -91,7 +92,7 @@ export async function POST(req: Request): Promise<Response> {
 
     // Create the chat completion
     const response = await openai.createChatCompletion({
-      model: 'gpt-4', // Corrected model name
+      model: 'gpt-4', // Ensure this model is available and correctly spelled
       stream: true,
       messages: [
         {
@@ -110,14 +111,15 @@ export async function POST(req: Request): Promise<Response> {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI API error:', errorText);
-      return new Response('OpenAI API error', { status: 500 });
+      return new Response(JSON.stringify({ error: 'OpenAI API error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Stream the response
     const stream = OpenAIStream(response);
     return new StreamingTextResponse(stream);
+
   } catch (error) {
     console.error('Error in chat API:', error);
-    return new Response('An error occurred', { status: 500 });
+    return new Response(JSON.stringify({ error: 'An internal server error occurred.' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
