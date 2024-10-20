@@ -5,7 +5,6 @@
 import { useChat } from 'ai/react'
 import React, { useRef, useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { motion } from 'framer-motion'
 
 interface ChatbotProps {
   onClose: () => void
