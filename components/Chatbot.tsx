@@ -42,7 +42,7 @@ export default function Chatbot({ onClose }: ChatbotProps) {
       </button>
 
       <div className="p-4 bg-white border-b">
-        <h2 className="text-xl font-bold text-black">Hi! I'm Axel, your Exatouch assistant. Ask me anything!</h2>
+        <h2 className="text-xl font-bold text-black">Hi! I&apos;m Axel, your Exatouch assistant. Ask me anything!</h2>
       </div>
       <div
         className="h-[400px] overflow-y-auto p-4 bg-white"
