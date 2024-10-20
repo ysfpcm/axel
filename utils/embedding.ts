@@ -2,10 +2,6 @@
 
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 /**
  * Generates embedding for a given text using OpenAI's Embedding API.
  * @param text The text to generate embedding for.
@@ -13,6 +9,10 @@ const openai = new OpenAI({
  */
 export async function getEmbedding(text: string): Promise<number[]> {
   try {
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
     if (!openai.apiKey) {
       throw new Error('OpenAI API key is not configured.');
     }
@@ -25,7 +25,7 @@ export async function getEmbedding(text: string): Promise<number[]> {
     });
 
     // Check if the response contains the expected data
-    if (response.data && response.data.length > 0) {
+    if (response.data && response.data.length > 0 && response.data[0].embedding) {
       console.log('Embedding generated successfully.');
       return response.data[0].embedding;
     } else {

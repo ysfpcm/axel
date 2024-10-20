@@ -6,14 +6,19 @@ import { loadKnowledgeBase } from '@/utils/knowledgeBase';
 import { getEmbedding } from '@/utils/embedding';
 import { cosineSimilarity } from '@/utils/similarity';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export const runtime = 'edge';
 
 export async function POST(req: Request): Promise<Response> {
   try {
+    // Initialize OpenAI client within the handler
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    if (!openai.apiKey) {
+      throw new Error('OpenAI API key is not configured.');
+    }
+
     // Parse the request body
     const body = await req.json();
     console.log('Request body:', body);
@@ -92,7 +97,7 @@ If your response includes steps, format them as a numbered list using Markdown s
 
     // Create the chat completion
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o', // Corrected model name
       stream: true,
       messages: [
         {
@@ -111,7 +116,7 @@ If your response includes steps, format them as a numbered list using Markdown s
     const stream = OpenAIStream(response);
     return new StreamingTextResponse(stream);
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in chat API:', error);
     return new Response(JSON.stringify({ error: 'An internal server error occurred.' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }

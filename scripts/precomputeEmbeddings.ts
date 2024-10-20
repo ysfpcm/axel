@@ -15,23 +15,36 @@ interface KnowledgeItem {
   embedding?: number[]; // Optional, will be added
 }
 
-// Initialize OpenAI API
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 /**
  * Generates embedding for a given text using OpenAI's Embedding API.
  * @param text The text to generate embedding for.
  * @returns A promise that resolves to the embedding vector.
  */
 async function getEmbedding(text: string): Promise<number[]> {
-  const response = await openai.embeddings.create({
-    model: 'text-embedding-ada-002',
-    input: text,
-  });
+  try {
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
 
-  return response.data[0].embedding;
+    if (!openai.apiKey) {
+      throw new Error('OpenAI API key is not configured.');
+    }
+
+    const response = await openai.embeddings.create({
+      model: 'text-embedding-ada-002',
+      input: text,
+    });
+
+    if (response.data && response.data.length > 0 && response.data[0].embedding) {
+      return response.data[0].embedding;
+    } else {
+      console.error('No embedding data returned from OpenAI:', response);
+      throw new Error('Failed to generate embedding: No data returned.');
+    }
+  } catch (error: any) {
+    console.error('Error generating embedding:', error);
+    throw new Error('Failed to generate embedding');
+  }
 }
 
 async function precomputeEmbeddings() {
