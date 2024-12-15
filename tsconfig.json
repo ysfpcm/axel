@@ -1,29 +1,31 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "baseUrl": "./",
+    "target": "es2020", // Ensures compatibility with modern JavaScript features
+    "module": "commonjs", // CommonJS is required for Node.js modules
+    "moduleResolution": "node", // Use Node.js-style resolution
+    "lib": ["es2020", "dom", "dom.iterable", "es2021"], // Includes modern JavaScript, DOM, and Node.js globals
+    "strict": true, // Enables all strict type checking options
+    "esModuleInterop": true, // Ensures compatibility with CommonJS/ESModule interop
+    "resolveJsonModule": true, // Enables importing JSON files
+    "allowJs": true, // Allows JavaScript files in the project
+    "isolatedModules": true, // Required for Next.js
+    "jsx": "preserve", // Allows JSX syntax, required for Next.js
+    "incremental": true, // Speeds up subsequent builds
+    "baseUrl": "./", // Resolves modules relative to the project root
     "paths": {
-      "@/*": ["./*"],
+      "@/*": ["./*"], // Allows for absolute imports
       "@/utils/*": ["./utils/*"],
       "@/data/*": ["./data/*"]
-    }
+    },
+    "skipLibCheck": true, // Skips type checks on libraries to prevent external errors
+    "typeRoots": ["./node_modules/@types"] // Ensures TypeScript uses installed types
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts", // Next.js environment types
+    "**/*.ts", // Include all TypeScript files
+    "**/*.tsx", // Include all TypeScript React files
+    "scripts/**/*.ts", // Include your custom Node.js scripts
+    ".next/types/**/*.ts" // Include Next.js-generated types
+  ],
+  "exclude": ["node_modules"] // Exclude dependencies
 }

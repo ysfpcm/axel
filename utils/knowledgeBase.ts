@@ -1,4 +1,6 @@
 // utils/knowledgeBase.ts
+import fs from 'fs';
+import path from 'path';
 
 interface KnowledgeBaseEntry {
   title: string;
@@ -7,14 +9,12 @@ interface KnowledgeBaseEntry {
 }
 
 export const loadKnowledgeBase = (): KnowledgeBaseEntry[] => {
-  // Example: Load from a JSON file or database
-  // Here, we'll return a static array for demonstration
-  return [
-    {
-      title: 'Example Title',
-      content: 'Example content.',
-      embedding: [/* embedding numbers */],
-    },
-    // Add more entries as needed
-  ];
+  try {
+    const knowledgeBasePath = path.join(process.cwd(), 'data', 'knowledgeBaseWithEmbeddings.json');
+    const knowledgeBaseData = fs.readFileSync(knowledgeBasePath, 'utf8');
+    return JSON.parse(knowledgeBaseData);
+  } catch (error) {
+    console.error("Error loading knowledge base:", error);
+    return []; // Return an empty array in case of an error
+  }
 };

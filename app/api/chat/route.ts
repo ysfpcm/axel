@@ -1,141 +1,155 @@
-// app/api/chat/route.ts
-
 import OpenAI from 'openai';
 import { OpenAIStream, StreamingTextResponse } from 'ai';
 import { loadKnowledgeBase } from '@/utils/knowledgeBase';
 import { getEmbedding } from '@/utils/embedding';
 import { cosineSimilarity } from '@/utils/similarity';
 
-export const runtime = 'edge';
+interface KnowledgeBaseItem {
+  title: string;
+  lastUpdated?: string;
+  compatibleVersion?: string;
+  contentSummary?: string;
+  instructions?: string[];
+  examples?: Array<{
+    title: string;
+    details: string;
+  }>;
+  notes?: string[];
+  relatedTopics?: Array<{
+    title: string;
+    lastUpdated: string;
+  }>;
+  embedding: number[];
+}
 
 export async function POST(req: Request): Promise<Response> {
   try {
-    // Initialize OpenAI client within the handler
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-
+    // Validate OpenAI API key
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     if (!openai.apiKey) {
-      throw new Error('OpenAI API key is not configured.');
+      return new Response(JSON.stringify({ error: 'OpenAI API key is not configured.' }), { status: 500 });
     }
-
-    // Optional: Temporary log to verify environment variable
-    console.log('OPENAI_API_KEY is set:', !!process.env.OPENAI_API_KEY);
 
     // Parse the request body
     const body = await req.json();
-    console.log('Request body:', body);
     const { messages } = body;
 
-    // Validate the messages array
-    if (!messages || !Array.isArray(messages)) {
-      console.error('Invalid messages format:', messages);
-      return new Response(JSON.stringify({ error: 'Invalid messages format' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return new Response(JSON.stringify({ error: 'Invalid messages format' }), { status: 400 });
     }
 
-    if (messages.length === 0) {
-      console.error('No messages received.');
-      return new Response(JSON.stringify({ error: 'No messages provided' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Validate each message
-    for (let i = 0; i < messages.length; i++) {
-      const msg = messages[i];
+    // Validate the format of all messages
+    for (const msg of messages) {
       if (!msg.role || !msg.content) {
-        console.error(`Message at index ${i} is invalid:`, msg);
-        return new Response(JSON.stringify({ error: `Invalid message format at index ${i}` }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return new Response(JSON.stringify({ error: 'Invalid message format' }), { status: 400 });
       }
     }
 
+    // Extract the last user message
     const lastMessage = messages[messages.length - 1];
-    console.log('Last message:', lastMessage);
 
-    // Load the knowledge base with embeddings
-    const knowledgeBase = loadKnowledgeBase();
-    console.log('Loaded knowledgeBase with embeddings:', knowledgeBase.length, 'entries');
-
-    // Validate knowledgeBase structure
+    // Load and validate the knowledge base
+    const knowledgeBase: KnowledgeBaseItem[] = loadKnowledgeBase();
     const validKnowledgeBase = knowledgeBase.filter(
       (item) =>
         item.title &&
         typeof item.title === 'string' &&
-        item.content &&
-        typeof item.content === 'string' &&
-        Array.isArray(item.embedding)
+        item.contentSummary &&
+        typeof item.contentSummary === 'string' &&
+        Array.isArray(item.embedding) &&
+        item.embedding.length > 0 // Ensure embeddings are present
     );
 
     if (validKnowledgeBase.length === 0) {
-      console.error('Knowledge base is empty or improperly formatted.');
-      return new Response(JSON.stringify({ error: 'Knowledge base error' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(JSON.stringify({ error: 'Knowledge base is empty or invalid, or embeddings not computed.' }), { status: 500 });
     }
 
-    // Generate embedding for user message
+    // Generate an embedding for the user's message
     const userEmbedding = await getEmbedding(lastMessage.content);
-    console.log('User embedding generated.');
 
-    // Calculate similarity scores
+    // Calculate cosine similarity for each knowledge base item
     const similarities = validKnowledgeBase.map((item) =>
       cosineSimilarity(userEmbedding, item.embedding)
     );
 
-    // Find top N relevant entries
+    // Retrieve the top N relevant entries
     const TOP_N = 5;
-    const topIndices = similarities
-      .map((score, idx) => ({ score, idx }))
+    const topRelevantInfos = similarities
+      .map((score, idx) => ({ score, item: validKnowledgeBase[idx] }))
       .sort((a, b) => b.score - a.score)
       .slice(0, TOP_N)
-      .map((item) => item.idx);
+      .map(({ item }) => item);
 
-    const topRelevantInfos = topIndices.map((idx) => validKnowledgeBase[idx].content);
-    const combinedInfo = topRelevantInfos.join(' ');
+    // Construct a context block with relevant knowledge
+    const sourcesBlock = topRelevantInfos
+      .map((info) => {
+        const title = info.title ? `## ${info.title}` : '';
+        const contentSummary = info.contentSummary ? `${info.contentSummary}\n` : '';
+        
+        // Format instructions if they exist
+        const instructions = info.instructions
+          ? `### Instructions:\n${info.instructions.map((step, idx) => `${idx + 1}. ${step}`).join('\n')}`
+          : '';
 
-    // Construct a more informative prompt
-    const prompt = `Based on the following relevant information:
-${combinedInfo}
+        // Format examples if they exist
+        const examples = info.examples
+          ? `### Examples:\n${info.examples.map((ex) => `- **${ex.title}:** ${ex.details}`).join('\n')}`
+          : '';
 
-Please provide a concise and helpful response to the user's question: "${lastMessage.content}"
-If your response includes steps, format them as a numbered list using Markdown syntax.`;
+        // Format notes if they exist
+        const notes = info.notes
+          ? `### Notes:\n${info.notes.map(note => `- ${note}`).join('\n')}`
+          : '';
 
-    console.log('Constructed prompt:', prompt);
+        // Format related topics if they exist
+        const relatedTopics = info.relatedTopics
+          ? `### Related Topics:\n${info.relatedTopics.map(topic => 
+              `- ${topic.title} (Last Updated: ${topic.lastUpdated})`).join('\n')}`
+          : '';
 
-    // Create the chat completion
+        // Combine all sections, filtering out empty ones
+        return [
+          title,
+          contentSummary,
+          instructions,
+          examples,
+          notes,
+          relatedTopics
+        ].filter(Boolean).join('\n\n');
+      })
+      .join('\n\n---\n\n'); // Add a separator between different knowledge base entries
+
+    // Build a user-specific prompt
+    const prompt = `Below is relevant information from our internal knowledge base that may help answer the user's question:
+
+${sourcesBlock}
+
+User's Question: "${lastMessage.content}"
+
+Please provide a concise and helpful response to the user's question. Use the knowledge base information to guide your answer. If your response includes steps, format them as a numbered list using Markdown syntax.
+`;
+
+    // Call the OpenAI API for a chat completion
     const response = await openai.chat.completions.create({
-      model: 'gpt-4', // Corrected model name
+      model: 'gpt-4', // Use a valid model name like 'gpt-3.5-turbo' or 'gpt-4'
       stream: true,
       messages: [
         {
           role: 'system',
           content:
-            'You are Axel, a friendly and professional AI assistant for Exatouch. Provide brief, easy-to-understand responses for individuals with no technical knowledge. Use the given context to inform your answers, and when providing step-by-step instructions, format them as a numbered list using Markdown syntax.',
+            'You are Axel, a friendly and professional AI assistant for Exatouch. Provide concise, easy-to-understand responses for users with minimal technical knowledge. Always base your answers on the Exatouch knowledge base. Format step-by-step instructions using Markdown numbered lists.'
         },
+        // Include prior conversation context if needed
         ...messages.slice(0, -1),
         { role: 'user', content: prompt },
       ],
     });
 
-    console.log('OpenAI API response received');
-
-    // Stream the response
+    // Stream the OpenAI response back to the client
     const stream = OpenAIStream(response);
     return new StreamingTextResponse(stream);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error('Error in chat API:', error.message);
-    } else {
-      console.error('Unexpected error in chat API:', error);
-    }
+  } catch (error: any) {
+    console.error('Error in chat API:', error.message || error);
     return new Response(JSON.stringify({ error: 'An internal server error occurred.' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
