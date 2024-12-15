@@ -19,6 +19,9 @@ export async function POST(req: Request): Promise<Response> {
       throw new Error('OpenAI API key is not configured.');
     }
 
+    // Optional: Temporary log to verify environment variable
+    console.log('OPENAI_API_KEY is set:', !!process.env.OPENAI_API_KEY);
+
     // Parse the request body
     const body = await req.json();
     console.log('Request body:', body);
@@ -109,7 +112,7 @@ If your response includes steps, format them as a numbered list using Markdown s
 
     // Create the chat completion
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4', // Corrected model name
       stream: true,
       messages: [
         {
