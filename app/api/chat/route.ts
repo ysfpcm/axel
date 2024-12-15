@@ -126,12 +126,11 @@ ${sourcesBlock}
 
 User's Question: "${lastMessage.content}"
 
-Please provide a concise and helpful response to the user's question. Use the knowledge base information to guide your answer. If your response includes steps, format them as a numbered list using Markdown syntax.
-`;
+Please provide a concise and helpful response to the user's question. Use the knowledge base information to guide your answer. If your response includes steps, format them as a numbered list using Markdown syntax.`;
 
     // Call the OpenAI API for a chat completion
     const response = await openai.chat.completions.create({
-      model: 'gpt-4', // Use a valid model name like 'gpt-3.5-turbo' or 'gpt-4'
+      model: 'gpt-4o',
       stream: true,
       messages: [
         {
@@ -148,8 +147,9 @@ Please provide a concise and helpful response to the user's question. Use the kn
     // Stream the OpenAI response back to the client
     const stream = OpenAIStream(response);
     return new StreamingTextResponse(stream);
-  } catch (error: any) {
-    console.error('Error in chat API:', error.message || error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Error in chat API:', errorMessage);
     return new Response(JSON.stringify({ error: 'An internal server error occurred.' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
