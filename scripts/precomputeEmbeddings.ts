@@ -76,8 +76,9 @@ async function getEmbedding(openai: OpenAI, text: string): Promise<number[]> {
       input: text,
     });
 
-    if (response.data && response.data.length > 0) {
-      return response.data[0].embedding;
+    const embedding = response.data?.[0]?.embedding;
+    if (Array.isArray(embedding) && embedding.length > 0 && embedding.every(Number.isFinite)) {
+      return embedding;
     } else {
       throw new Error("No embedding data returned.");
     }
@@ -123,8 +124,7 @@ async function precomputeEmbeddings() {
         console.log(`Embedding text for "${item.title}":`, textForEmbedding);
 
         if (!textForEmbedding.trim()) {
-          console.warn(`Skipping item with no meaningful content: ${item.title}`);
-          continue;
+          throw new Error(`No meaningful content for item: ${item.title}`);
         }
 
         const embedding = await getEmbedding(openai, textForEmbedding);
@@ -132,6 +132,7 @@ async function precomputeEmbeddings() {
         console.log(`Generated embedding for: ${item.title}`);
       } catch (error: any) {
         console.error(`Error generating embedding for "${item.title}":`, error.message || error);
+        throw error;
       }
     }
 
@@ -151,6 +152,7 @@ fs.writeFileSync(
     console.log("Precomputed embeddings saved to knowledgeBaseWithEmbeddings.json.");
   } catch (error: any) {
     console.error("Error during embedding precomputation:", error.message || error);
+    process.exitCode = 1;
   }
 }
 
