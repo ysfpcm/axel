@@ -24,6 +24,7 @@ interface KnowledgeItem {
   lastUpdated?: string;
   compatibleVersion?: string;
   contentSummary?: string;
+  content?: string;
   instructions?: string[];
   examples?: { title: string; details: string }[];
   notes?: string[];
@@ -43,6 +44,7 @@ function buildEmbeddingText(item: KnowledgeItem): string {
 
   if (item.title) parts.push(`Title: ${item.title}`);
   if (item.contentSummary) parts.push(`Content Summary: ${item.contentSummary}`);
+  if (item.content) parts.push(`Content: ${item.content}`);
   if (item.instructions?.length)
     parts.push(
       `Instructions:\n${item.instructions.map((step, idx) => `${idx + 1}. ${step}`).join("\n")}`
