@@ -9,6 +9,7 @@ interface KnowledgeBaseItem {
   lastUpdated?: string;
   compatibleVersion?: string;
   contentSummary?: string;
+  content?: string;
   instructions?: string[];
   examples?: Array<{
     title: string;
@@ -54,8 +55,8 @@ export async function POST(req: Request): Promise<Response> {
       (item) =>
         item.title &&
         typeof item.title === 'string' &&
-        item.contentSummary &&
-        typeof item.contentSummary === 'string' &&
+        ((typeof item.contentSummary === 'string' && item.contentSummary.trim()) ||
+          (typeof item.content === 'string' && item.content.trim())) &&
         Array.isArray(item.embedding) &&
         item.embedding.length > 0 // Ensure embeddings are present
     );
@@ -85,6 +86,7 @@ export async function POST(req: Request): Promise<Response> {
       .map((info) => {
         const title = info.title ? `## ${info.title}` : '';
         const contentSummary = info.contentSummary ? `${info.contentSummary}\n` : '';
+        const content = info.content || '';
         
         // Format instructions if they exist
         const instructions = info.instructions
@@ -111,6 +113,7 @@ export async function POST(req: Request): Promise<Response> {
         return [
           title,
           contentSummary,
+          content,
           instructions,
           examples,
           notes,
