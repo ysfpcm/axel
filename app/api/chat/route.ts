@@ -25,25 +25,37 @@ interface KnowledgeBaseItem {
 
 export async function POST(req: Request): Promise<Response> {
   try {
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const messages = body && typeof body === 'object' && 'messages' in body ? body.messages : undefined;
+    if (
+      !Array.isArray(messages) ||
+      messages.length === 0 ||
+      messages.some((msg) =>
+        !msg || typeof msg !== 'object' ||
+        (msg.role !== 'user' && msg.role !== 'assistant') ||
+        typeof msg.content !== 'string' || !msg.content.trim()
+      ) ||
+      messages[messages.length - 1].role !== 'user'
+    ) {
+      return new Response(JSON.stringify({ error: 'Invalid messages format' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Validate OpenAI API key
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     if (!openai.apiKey) {
       return new Response(JSON.stringify({ error: 'OpenAI API key is not configured.' }), { status: 500 });
-    }
-
-    // Parse the request body
-    const body = await req.json();
-    const { messages } = body;
-
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return new Response(JSON.stringify({ error: 'Invalid messages format' }), { status: 400 });
-    }
-
-    // Validate the format of all messages
-    for (const msg of messages) {
-      if (!msg.role || !msg.content) {
-        return new Response(JSON.stringify({ error: 'Invalid message format' }), { status: 400 });
-      }
     }
 
     // Extract the last user message
