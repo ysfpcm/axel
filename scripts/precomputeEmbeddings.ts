@@ -138,19 +138,7 @@ async function precomputeEmbeddings() {
       }
     }
 
-// Save updated knowledge base
-fs.writeFileSync(
-  knowledgeBasePath,
-  JSON.stringify(updatedKnowledgeBase, (key, value) => {
-    // Keep embeddings in a single line
-    if (key === "embedding" && Array.isArray(value)) {
-      return JSON.stringify(value); // Temporarily stringify the array
-    }
-    return value;
-  }, 2)
-    .replace(/"(\[.*?\])"/g, '$1'), // Remove quotes around stringified arrays
-      "utf8"
-    );
+    fs.writeFileSync(knowledgeBasePath, JSON.stringify(updatedKnowledgeBase, null, 2), "utf8");
     console.log("Precomputed embeddings saved to knowledgeBaseWithEmbeddings.json.");
   } catch (error: any) {
     console.error("Error during embedding precomputation:", error.message || error);
