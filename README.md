@@ -1,5 +1,22 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Chat setup
+
+Axel needs an `OPENAI_API_KEY` in `.env.local` and a knowledge base embedded
+with the same model as the chat endpoint. The bundled vectors have 1,536
+dimensions, while the configured `text-embedding-3-large` model returns 3,072
+by default. Regenerate them before using the chat:
+
+```bash
+node --experimental-strip-types scripts/precomputeEmbeddings.ts
+```
+
+Run this from the project root with dependencies installed and Node.js 24 or
+later. It calls the OpenAI API for every entry (which may incur charges) and
+overwrites `data/knowledgeBaseWithEmbeddings.json` after all entries succeed.
+Regenerate the vectors again if you change the embedding model; equal vector
+dimensions alone do not guarantee that different models are compatible.
+
 ## Getting Started
 
 First, run the development server:

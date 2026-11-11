@@ -80,6 +80,17 @@ export async function POST(req: Request): Promise<Response> {
     // Generate an embedding for the user's message
     const userEmbedding = await getEmbedding(lastMessage.content);
 
+    if (userEmbedding.length === 0 || validKnowledgeBase.some(
+      (item) => item.embedding.length !== userEmbedding.length
+    )) {
+      return new Response(JSON.stringify({
+        error: 'Knowledge base embeddings do not match the query embedding. Regenerate the knowledge base embeddings with the configured model.',
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Calculate cosine similarity for each knowledge base item
     const similarities = validKnowledgeBase.map((item) =>
       cosineSimilarity(userEmbedding, item.embedding)
