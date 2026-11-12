@@ -53,10 +53,14 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     // Validate OpenAI API key
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    if (!openai.apiKey) {
-      return new Response(JSON.stringify({ error: 'OpenAI API key is not configured.' }), { status: 500 });
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: 'OpenAI API key is not configured.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
+    const openai = new OpenAI({ apiKey });
 
     // Extract the last user message
     const lastMessage = messages[messages.length - 1];
