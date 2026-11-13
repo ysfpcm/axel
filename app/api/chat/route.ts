@@ -15,6 +15,11 @@ interface KnowledgeBaseItem {
     title: string;
     details: string;
   }>;
+  promoTypes?: Array<{ type: string; description: string }>;
+  features?: Array<{ name: string; description: string }>;
+  promoSettings?: Array<{ field: string; description: string }>;
+  examplePromos?: Array<{ title: string; details: string }>;
+  bulkSetup?: { overview: string; steps: string[] };
   notes?: string[];
   relatedTopics?: Array<{
     title: string;
@@ -125,6 +130,26 @@ export async function POST(req: Request): Promise<Response> {
           ? `### Examples:\n${info.examples.map((ex) => `- **${ex.title}:** ${ex.details}`).join('\n')}`
           : '';
 
+        const promoTypes = info.promoTypes
+          ? `### Promo Types:\n${info.promoTypes.map((promo) => `- **${promo.type}:** ${promo.description}`).join('\n')}`
+          : '';
+
+        const features = info.features
+          ? `### Features:\n${info.features.map((feature) => `- **${feature.name}:** ${feature.description}`).join('\n')}`
+          : '';
+
+        const promoSettings = info.promoSettings
+          ? `### Promo Settings:\n${info.promoSettings.map((setting) => `- **${setting.field}:** ${setting.description}`).join('\n')}`
+          : '';
+
+        const examplePromos = info.examplePromos
+          ? `### Example Promos:\n${info.examplePromos.map((ex) => `- **${ex.title}:** ${ex.details}`).join('\n')}`
+          : '';
+
+        const bulkSetup = info.bulkSetup
+          ? `### Bulk Setup:\n${info.bulkSetup.overview}\n${info.bulkSetup.steps.map((step, idx) => `${idx + 1}. ${step}`).join('\n')}`
+          : '';
+
         // Format notes if they exist
         const notes = info.notes
           ? `### Notes:\n${info.notes.map(note => `- ${note}`).join('\n')}`
@@ -143,6 +168,11 @@ export async function POST(req: Request): Promise<Response> {
           content,
           instructions,
           examples,
+          promoTypes,
+          features,
+          promoSettings,
+          examplePromos,
+          bulkSetup,
           notes,
           relatedTopics
         ].filter(Boolean).join('\n\n');
