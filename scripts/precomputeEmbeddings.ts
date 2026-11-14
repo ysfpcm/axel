@@ -27,6 +27,10 @@ interface KnowledgeItem {
   content?: string;
   instructions?: string[];
   examples?: { title: string; details: string }[];
+  promoTypes?: { type: string; description: string }[];
+  features?: { name: string; description: string }[];
+  examplePromos?: { title: string; details: string }[];
+  bulkSetup?: { overview: string; steps: string[] };
   notes?: string[];
   relatedTopics?: { title: string; lastUpdated: string }[];
   url?: string;
@@ -52,6 +56,26 @@ function buildEmbeddingText(item: KnowledgeItem): string {
   if (item.examples?.length)
     parts.push(
       `Examples:\n${item.examples.map((ex) => `- ${ex.title}: ${ex.details}`).join("\n")}`
+    );
+  if (item.promoTypes?.length)
+    parts.push(
+      `Promo Types:\n${item.promoTypes.map((promo) => `- ${promo.type}: ${promo.description}`).join("\n")}`
+    );
+  if (item.features?.length)
+    parts.push(
+      `Features:\n${item.features.map((feature) => `- ${feature.name}: ${feature.description}`).join("\n")}`
+    );
+  if (item.promoSettings?.length)
+    parts.push(
+      `Promo Settings:\n${item.promoSettings.map((setting) => `- ${setting.field}: ${setting.description}`).join("\n")}`
+    );
+  if (item.examplePromos?.length)
+    parts.push(
+      `Example Promos:\n${item.examplePromos.map((example) => `- ${example.title}: ${example.details}`).join("\n")}`
+    );
+  if (item.bulkSetup)
+    parts.push(
+      `Bulk Setup:\n${item.bulkSetup.overview}\n${item.bulkSetup.steps.map((step, idx) => `${idx + 1}. ${step}`).join("\n")}`
     );
   if (item.notes?.length)
     parts.push(`Notes:\n${item.notes.map((note) => `- ${note}`).join("\n")}`);
