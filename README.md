@@ -14,8 +14,9 @@ node --experimental-strip-types scripts/precomputeEmbeddings.ts
 Run this from the project root with dependencies installed and Node.js 24 or
 later. It calls the OpenAI API for every entry (which may incur charges) and
 overwrites `data/knowledgeBaseWithEmbeddings.json` after all entries succeed.
-Regenerate the vectors again if you change the embedding model; equal vector
-dimensions alone do not guarantee that different models are compatible.
+Regenerate the vectors again if you change the embedding model, knowledge base
+content, or the text used to generate embeddings. Equal vector dimensions alone
+do not guarantee that different models are compatible.
 
 ## Getting Started
 
