@@ -23,7 +23,7 @@ export default function Chatbot({ onClose }: ChatbotProps) {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
-    if (scrollHeight - scrollTop === clientHeight) {
+    if (scrollHeight - scrollTop - clientHeight <= 1) {
       setIsScrolled(false)
     } else {
       setIsScrolled(true)
