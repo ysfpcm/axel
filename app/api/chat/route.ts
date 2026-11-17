@@ -86,10 +86,26 @@ export async function POST(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: 'Knowledge base is empty or invalid, or embeddings not computed.' }), { status: 500 });
     }
 
+    if (validKnowledgeBase.some((item) => !item.embedding.every(Number.isFinite))) {
+      return new Response(JSON.stringify({
+        error: 'Knowledge base embeddings contain invalid values. Regenerate the knowledge base embeddings with the configured model.',
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Generate an embedding for the user's message
     const userEmbedding = await getEmbedding(lastMessage.content);
 
-    if (userEmbedding.length === 0 || validKnowledgeBase.some(
+    if (!Array.isArray(userEmbedding) || userEmbedding.length === 0 || !userEmbedding.every(Number.isFinite)) {
+      return new Response(JSON.stringify({ error: 'Query embedding is empty or contains invalid values.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (validKnowledgeBase.some(
       (item) => item.embedding.length !== userEmbedding.length
     )) {
       return new Response(JSON.stringify({
