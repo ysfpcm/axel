@@ -162,7 +162,16 @@ async function precomputeEmbeddings() {
       }
     }
 
-    fs.writeFileSync(knowledgeBasePath, JSON.stringify(updatedKnowledgeBase, null, 2), "utf8");
+    const tempDir = fs.mkdtempSync(path.join(path.dirname(knowledgeBasePath), ".embeddings-"));
+    try {
+      const tempPath = path.join(tempDir, path.basename(knowledgeBasePath));
+      const mode = fs.statSync(knowledgeBasePath).mode & 0o777;
+      fs.writeFileSync(tempPath, JSON.stringify(updatedKnowledgeBase, null, 2), { encoding: "utf8", mode });
+      fs.chmodSync(tempPath, mode);
+      fs.renameSync(tempPath, knowledgeBasePath);
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
     console.log("Precomputed embeddings saved to knowledgeBaseWithEmbeddings.json.");
   } catch (error: any) {
     console.error("Error during embedding precomputation:", error.message || error);
