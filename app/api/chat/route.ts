@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { OpenAIStream, StreamingTextResponse } from 'ai';
 import { loadKnowledgeBase } from '@/utils/knowledgeBase';
-import { getEmbedding } from '@/utils/embedding';
+import { EMBEDDING_DIMENSIONS, getEmbedding } from '@/utils/embedding';
 import { cosineSimilarity } from '@/utils/similarity';
 
 interface KnowledgeBaseItem {
@@ -95,6 +95,14 @@ export async function POST(req: Request): Promise<Response> {
       });
     }
 
+    const embeddingMismatchError = 'Knowledge base embeddings do not match the query embedding. Regenerate the knowledge base embeddings with the configured model.';
+    if (validKnowledgeBase.some((item) => item.embedding.length !== EMBEDDING_DIMENSIONS)) {
+      return new Response(JSON.stringify({ error: embeddingMismatchError }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Generate an embedding for the user's message
     const userEmbedding = await getEmbedding(lastMessage.content);
 
@@ -109,7 +117,7 @@ export async function POST(req: Request): Promise<Response> {
       (item) => item.embedding.length !== userEmbedding.length
     )) {
       return new Response(JSON.stringify({
-        error: 'Knowledge base embeddings do not match the query embedding. Regenerate the knowledge base embeddings with the configured model.',
+        error: embeddingMismatchError,
       }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
