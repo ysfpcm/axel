@@ -30,6 +30,15 @@ export default function Chatbot({ onClose }: ChatbotProps) {
     }
   }
 
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    if (isLoading || !input.trim()) {
+      e.preventDefault()
+      return
+    }
+
+    handleSubmit(e)
+  }
+
   return (
     <div className="w-full max-w-lg mx-auto border rounded-lg shadow-lg bg-white relative">
       {/* Close Button */}
@@ -83,7 +92,7 @@ export default function Chatbot({ onClose }: ChatbotProps) {
         <div ref={messagesEndRef} />
       </div>
       <div className="p-4 border-t bg-white">
-        <form onSubmit={handleSubmit} className="flex space-x-2">
+        <form onSubmit={handleFormSubmit} className="flex space-x-2">
           <input
             value={input}
             onChange={handleInputChange}
@@ -94,7 +103,7 @@ export default function Chatbot({ onClose }: ChatbotProps) {
           <button
             type="submit"
             className="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600"
-            disabled={isLoading}
+            disabled={isLoading || !input.trim()}
             aria-label="Send message"
           >
             Send
