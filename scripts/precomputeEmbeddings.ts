@@ -105,10 +105,13 @@ async function getEmbedding(openai: OpenAI, text: string): Promise<number[]> {
     });
 
     const embedding = response.data?.[0]?.embedding;
-    if (Array.isArray(embedding) && embedding.length > 0 && embedding.every(Number.isFinite)) {
+    if (
+      Array.isArray(embedding) && embedding.length > 0 &&
+      embedding.every(Number.isFinite) && embedding.some((value) => value !== 0)
+    ) {
       return embedding;
     } else {
-      throw new Error("No embedding data returned.");
+      throw new Error("Embedding data is empty, invalid, or a zero vector.");
     }
   } catch (error: any) {
     console.error("Error generating embedding:", error.message || error);

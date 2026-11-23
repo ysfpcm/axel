@@ -86,9 +86,11 @@ export async function POST(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: 'Knowledge base is empty or invalid, or embeddings not computed.' }), { status: 500 });
     }
 
-    if (validKnowledgeBase.some((item) => !item.embedding.every(Number.isFinite))) {
+    if (validKnowledgeBase.some((item) =>
+      !item.embedding.every(Number.isFinite) || !item.embedding.some((value) => value !== 0)
+    )) {
       return new Response(JSON.stringify({
-        error: 'Knowledge base embeddings contain invalid values. Regenerate the knowledge base embeddings with the configured model.',
+        error: 'Knowledge base embeddings contain invalid values or a zero vector. Regenerate the knowledge base embeddings with the configured model.',
       }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
@@ -106,8 +108,11 @@ export async function POST(req: Request): Promise<Response> {
     // Generate an embedding for the user's message
     const userEmbedding = await getEmbedding(lastMessage.content);
 
-    if (!Array.isArray(userEmbedding) || userEmbedding.length === 0 || !userEmbedding.every(Number.isFinite)) {
-      return new Response(JSON.stringify({ error: 'Query embedding is empty or contains invalid values.' }), {
+    if (
+      !Array.isArray(userEmbedding) || userEmbedding.length === 0 ||
+      !userEmbedding.every(Number.isFinite) || !userEmbedding.some((value) => value !== 0)
+    ) {
+      return new Response(JSON.stringify({ error: 'Query embedding is empty, contains invalid values, or is a zero vector.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
       });
