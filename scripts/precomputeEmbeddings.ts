@@ -2,6 +2,7 @@ import * as dotenv from "dotenv";
 import OpenAI from "openai";
 import fs from "fs";
 import path from "path";
+import { EMBEDDING_DIMENSIONS, EMBEDDING_MODEL } from "../utils/embeddingConfig.js";
 
 // Load environment variables from .env
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
@@ -98,7 +99,8 @@ function buildEmbeddingText(item: KnowledgeItem): string {
 async function getEmbedding(openai: OpenAI, text: string): Promise<number[]> {
   try {
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-large",
+      model: EMBEDDING_MODEL,
+      dimensions: EMBEDDING_DIMENSIONS,
       input: text,
     });
 
@@ -154,6 +156,9 @@ async function precomputeEmbeddings() {
         }
 
         const embedding = await getEmbedding(openai, textForEmbedding);
+        if (embedding.length !== EMBEDDING_DIMENSIONS) {
+          throw new Error(`Expected ${EMBEDDING_DIMENSIONS} embedding dimensions, received ${embedding.length}.`);
+        }
         updatedKnowledgeBase.push({ ...item, embedding });
         console.log(`Generated embedding for: ${item.title}`);
       } catch (error: any) {

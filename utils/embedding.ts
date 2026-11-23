@@ -1,8 +1,9 @@
 // app/utils/embedding.ts
 
 import OpenAI from 'openai';
+import { EMBEDDING_DIMENSIONS, EMBEDDING_MODEL } from './embeddingConfig.js';
 
-export const EMBEDDING_DIMENSIONS = 3072;
+export { EMBEDDING_DIMENSIONS };
 
 /**
  * Generates embedding for a given text using OpenAI's Embedding API.
@@ -22,7 +23,7 @@ export async function getEmbedding(text: string): Promise<number[]> {
     console.log('Generating embedding for text:', text);
 
     const response = await openai.embeddings.create({
-      model: 'text-embedding-3-large',
+      model: EMBEDDING_MODEL,
       dimensions: EMBEDDING_DIMENSIONS,
       input: text,
     });
